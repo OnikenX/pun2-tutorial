@@ -40,7 +40,6 @@ namespace io.github.onikenx
             //start following the target if wanted
             if (followOnStart)
                 OnStartFollowing();
-            UnityEngine.SceneManagement.SceneManager.sceneLoaded += OnSceneLoaded;
         }
 
         private void LateUpdate()
@@ -53,23 +52,7 @@ namespace io.github.onikenx
             if (isFollowing)
                 Follow();
         }
-
-        /// <summary>See CalledOnLevelWasLoaded. Outdated in Unity 5.4.</summary>
-        void OnLevelWasLoaded(int level)
-        {
-            this.CalledOnLevelWasLoaded(level);
-        }
-
-
-        void CalledOnLevelWasLoaded(int level)
-        {
-            // check if we are outside the Arena and if it's the case, spawn around the center of the arena in a safe zone
-            if (!Physics.Raycast(transform.position, -Vector3.up, 5f))
-            {
-                transform.position = new Vector3(0f, 5f, 0f);
-            }
-        }
-
+        
         #endregion
 
         #region Public Methods
@@ -80,6 +63,10 @@ namespace io.github.onikenx
         /// </summary>
         public void OnStartFollowing()
         {
+            if (Camera.main == null)
+            {
+                throw new Exception("Camera.main does not exist");
+            }
             cameraTransform = Camera.main.transform;
             isFollowing = true;
             //we don't smooth anything, we go straight to the right camera shot
@@ -93,31 +80,26 @@ namespace io.github.onikenx
         /// <summary>
         /// follow the target smoothly
         /// </summary>
-        void Follow()
+        private void Follow()
         {
             cameraOffset.z = -distance;
             cameraOffset.y = height;
 
-            cameraTransform.position = Vector3.Lerp(cameraTransform.position, this.transform.position + this.transform.TransformVector(cameraOffset), smothSpeed * Time.deltaTime);
+            var position = this.transform.position;
+            cameraTransform.position = Vector3.Lerp(cameraTransform.position, position + this.transform.TransformVector(cameraOffset), smothSpeed * Time.deltaTime);
 
-            cameraTransform.LookAt(this.transform.position + centerOffset);
+            cameraTransform.LookAt(position + centerOffset);
         }
 
-        void OnSceneLoaded(UnityEngine.SceneManagement.Scene scene, UnityEngine.SceneManagement.LoadSceneMode loadingMode)
-        {
-            this.CalledOnLevelWasLoaded(scene.buildIndex);
-        }
-
-        void Cut()
+        private void Cut()
         {
             cameraOffset.z = -distance;
             cameraOffset.y = height;
+            var position = this.transform.position;
+            cameraTransform.position = position + this.transform.TransformVector(cameraOffset);
 
-            cameraTransform.position = this.transform.position + this.transform.TransformVector(cameraOffset);
-
-            cameraTransform.LookAt(this.transform.position + centerOffset);
+            cameraTransform.LookAt(position + centerOffset);
         }
-
         #endregion
     }
 }
